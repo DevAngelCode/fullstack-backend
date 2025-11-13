@@ -32,12 +32,14 @@ public class Usuario implements UserDetails {
     private Long id;
 
     private String nombre;
+    private String apellido; // New field
 
     @Column(nullable = false, unique = true)
     private String username;
     
     @Column(nullable = false, unique = true)
     private String email;
+    private String telefono; // New field
 
     private String password;
 

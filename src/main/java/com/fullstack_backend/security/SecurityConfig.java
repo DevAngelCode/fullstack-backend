@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/profile/**").hasAnyRole("ADMIN", "USER")
+                .requestMatchers("/api/v1/profile/**").hasAnyRole("ADMIN", "CLIENTE","TECNICO")
                 .anyRequest().authenticated()
             );
         
