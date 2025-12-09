@@ -94,4 +94,35 @@ public class UsuarioServiceImpl implements UsuarioService {
         userProfileResponse.setEnabled(updatedUsuario.getEnabled());
         return userProfileResponse;
     }
+
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Override
+    public void changePassword(Long id,
+            com.fullstack_backend.payload.request.ChangePasswordRequest changePasswordRequest) {
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(id);
+
+        if (usuarioOptional.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + id);
+        }
+
+        Usuario usuario = usuarioOptional.get();
+
+        if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), usuario.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contraseña actual incorrecta");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        usuarioRepository.save(usuario);
+    }
+
+    @Override
+    public boolean verifyPassword(Long id, String password) {
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(id);
+        if (usuarioOptional.isEmpty()) {
+            return false;
+        }
+        return passwordEncoder.matches(password, usuarioOptional.get().getPassword());
+    }
 }

@@ -19,4 +19,7 @@ public class ServicioRequest {
 
     @NotNull
     private Double precio;
+
+    private String imagenBase64;
+    private String tipoImagen;
 }

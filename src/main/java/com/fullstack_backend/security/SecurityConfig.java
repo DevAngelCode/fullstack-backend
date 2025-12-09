@@ -39,25 +39,23 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-     @Bean
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(Customizer.withDefaults()) 
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**","/api/v1/servicios/**").permitAll()
-                .requestMatchers("/api/v1/profile/**").hasAnyRole("ADMIN", "CLIENTE","TECNICO")
-                .anyRequest().authenticated()
-            );
-        
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/servicios/**", "/api/v1/sedes/**").permitAll()
+                        .requestMatchers("/api/v1/profile/**").hasAnyRole("ADMIN", "CLIENTE", "TECNICO")
+                        .anyRequest().authenticated());
+
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
 
-    
 }

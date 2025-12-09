@@ -18,9 +18,16 @@ public class Servicio {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;
 
     @Column(nullable = false)
     private Double precio;
+
+    @Column(name = "tipo_imagen")
+    private String tipoImagen;
+
+    @Lob
+    @Column(columnDefinition = "LONGBLOB", nullable = true)
+    private byte[] imagenData;
 }

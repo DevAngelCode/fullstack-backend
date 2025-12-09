@@ -36,8 +36,25 @@ public class ProfileController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENTE', 'ROLE_TECNICO')")
-    public ResponseEntity<UserProfileResponse> updateUserProfile(@PathVariable Long id, @RequestBody ProfileRequest profileRequest) {
+    public ResponseEntity<UserProfileResponse> updateUserProfile(@PathVariable Long id,
+            @RequestBody ProfileRequest profileRequest) {
         UserProfileResponse updatedProfile = usuarioService.updateUserProfile(id, profileRequest);
         return ResponseEntity.ok(updatedProfile);
+    }
+
+    @PutMapping("/{id}/change-password")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENTE', 'ROLE_TECNICO')")
+    public ResponseEntity<Void> changePassword(@PathVariable Long id,
+            @RequestBody com.fullstack_backend.payload.request.ChangePasswordRequest changePasswordRequest) {
+        usuarioService.changePassword(id, changePasswordRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/verify-password")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENTE', 'ROLE_TECNICO')")
+    public ResponseEntity<Boolean> verifyPassword(@PathVariable Long id,
+            @RequestBody java.util.Map<String, String> request) {
+        boolean isValid = usuarioService.verifyPassword(id, request.get("password"));
+        return ResponseEntity.ok(isValid);
     }
 }

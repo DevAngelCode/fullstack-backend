@@ -2,7 +2,7 @@ package com.fullstack_backend.controller;
 
 import com.fullstack_backend.payload.request.ServicioRequest;
 import com.fullstack_backend.payload.response.ServicioResponse;
-import com.fullstack_backend.service.IServicioService;
+import com.fullstack_backend.service.ServicioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,7 +16,7 @@ import java.util.List;
 public class ServicioController {
 
     @Autowired
-    private IServicioService servicioService;
+    private ServicioService servicioService;
 
     @GetMapping
     public ResponseEntity<List<ServicioResponse>> getAllServicios() {

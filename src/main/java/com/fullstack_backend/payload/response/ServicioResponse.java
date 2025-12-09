@@ -12,4 +12,6 @@ public class ServicioResponse {
     private String nombre;
     private String descripcion;
     private Double precio;
+    private String imagenBase64;
+    private String tipoImagen;
 }
