@@ -1,0 +1,19 @@
+package com.fullstack_backend.service;
+
+import com.fullstack_backend.payload.request.CitaRequest;
+import com.fullstack_backend.payload.response.CitaResponse;
+
+import java.util.List;
+
+public interface CitaService {
+
+    CitaResponse crearCita(CitaRequest citaRequest, String username);
+
+    List<CitaResponse> getMisCitas(String username);
+
+    CitaResponse getCitaById(Long id, String username);
+
+    CitaResponse cancelarCita(Long id, String username);
+
+    List<CitaResponse> getAllCitas(); // Admin only
+}

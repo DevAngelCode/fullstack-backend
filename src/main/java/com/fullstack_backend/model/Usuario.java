@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,7 +37,7 @@ public class Usuario implements UserDetails {
 
     @Column(nullable = false, unique = true)
     private String username;
-    
+
     @Column(nullable = false, unique = true)
     private String email;
     private String telefono; // New field
@@ -50,11 +51,21 @@ public class Usuario implements UserDetails {
     @JoinTable(name = "usuario_rol", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"))
     private Set<Rol> roles = new HashSet<>();
 
+    // Sede where technician works (only for ROLE_TECNICO)
+    @ManyToOne
+    @JoinColumn(name = "sede_id")
+    private Sede sede;
+
+    // Services that technician can perform (only for ROLE_TECNICO)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "usuario_servicio", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "servicio_id"))
+    private Set<Servicio> servicios = new HashSet<>();
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles.stream()
-            .map(role -> new SimpleGrantedAuthority(role.getNombre().name()))
-            .collect(Collectors.toList());
+                .map(role -> new SimpleGrantedAuthority(role.getNombre().name()))
+                .collect(Collectors.toList());
     }
 
     @Override
