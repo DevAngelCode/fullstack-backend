@@ -18,4 +18,6 @@ public class UserProfileResponse {
     private String telefono; // New field
     private List<String> roles;
     private Boolean enabled; // Include enabled status
+    private String imagenBase64;
+    private String tipoImagen;
 }

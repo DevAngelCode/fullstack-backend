@@ -56,15 +56,23 @@ public class AuthServiceImpl implements AuthService {
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
 
+            String imagenBase64 = null;
+            if (userDetails.getImagenData() != null && userDetails.getImagenData().length > 0) {
+                imagenBase64 = "data:" + userDetails.getTipoImagen() + ";base64," +
+                        java.util.Base64.getEncoder().encodeToString(userDetails.getImagenData());
+            }
+
             return new LoginResponse(jwt,
                     userDetails.getId(),
                     userDetails.getUsername(),
                     userDetails.getEmail(),
                     roles,
-                    "Login successful!"); // Pass success message
+                    "Login successful!",
+                    imagenBase64,
+                    userDetails.getTipoImagen()); // Pass success message
         } catch (AuthenticationException e) {
             // Return a LoginResponse with an error message and null for other fields
-            return new LoginResponse(null, null, null, null, null, "Error: Credenciales incorrectas.");
+            return new LoginResponse(null, null, null, null, null, "Error: Credenciales incorrectas.", null, null);
         }
     }
 

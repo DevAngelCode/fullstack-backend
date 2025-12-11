@@ -47,6 +47,13 @@ public class Usuario implements UserDetails {
     // Campo para habilitación
     private Boolean enabled = true;
 
+    @Column(name = "tipo_imagen")
+    private String tipoImagen;
+
+    @jakarta.persistence.Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] imagenData;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "usuario_rol", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"))
     private Set<Rol> roles = new HashSet<>();

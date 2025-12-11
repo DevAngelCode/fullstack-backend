@@ -64,4 +64,18 @@ public class CitaController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<CitaResponse> updateEstadoCita(
+            @PathVariable Long id,
+            @RequestParam String estado,
+            Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            CitaResponse cita = citaService.updateEstadoCita(id, estado, username);
+            return new ResponseEntity<>(cita, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+    }
 }

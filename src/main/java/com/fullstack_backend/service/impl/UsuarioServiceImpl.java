@@ -28,18 +28,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         Usuario usuario = usuarioOptional.get();
-        UserProfileResponse userProfileResponse = new UserProfileResponse();
-        userProfileResponse.setId(usuario.getId());
-        userProfileResponse.setNombre(usuario.getNombre());
-        userProfileResponse.setApellido(usuario.getApellido());
-        userProfileResponse.setUsername(usuario.getUsername());
-        userProfileResponse.setEmail(usuario.getEmail());
-        userProfileResponse.setTelefono(usuario.getTelefono());
-        userProfileResponse.setRoles(usuario.getRoles().stream()
-                .map(rol -> rol.getNombre().name())
-                .collect(Collectors.toList()));
-        userProfileResponse.setEnabled(usuario.getEnabled());
-        return userProfileResponse;
+        return mapToResponse(usuario);
     }
 
     @Override
@@ -51,18 +40,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         Usuario usuario = usuarioOptional.get();
-        UserProfileResponse userProfileResponse = new UserProfileResponse();
-        userProfileResponse.setId(usuario.getId());
-        userProfileResponse.setNombre(usuario.getNombre());
-        userProfileResponse.setApellido(usuario.getApellido());
-        userProfileResponse.setUsername(usuario.getUsername());
-        userProfileResponse.setEmail(usuario.getEmail());
-        userProfileResponse.setTelefono(usuario.getTelefono());
-        userProfileResponse.setRoles(usuario.getRoles().stream()
-                .map(rol -> rol.getNombre().name())
-                .collect(Collectors.toList()));
-        userProfileResponse.setEnabled(usuario.getEnabled());
-        return userProfileResponse;
+        return mapToResponse(usuario);
     }
 
     @Override
@@ -80,18 +58,45 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setEmail(profileRequest.getEmail());
         usuario.setTelefono(profileRequest.getTelefono());
 
+        if (profileRequest.getImagenBase64() != null && !profileRequest.getImagenBase64().isEmpty()) {
+            try {
+                String base64String = profileRequest.getImagenBase64();
+                String[] parts = base64String.split(",");
+                String type = parts[0].split(":")[1].split(";")[0];
+                String data = parts.length > 1 ? parts[1] : parts[0];
+
+                usuario.setTipoImagen(type);
+                usuario.setImagenData(java.util.Base64.getDecoder().decode(data));
+            } catch (Exception e) {
+                // Log error or ignore
+                System.err.println("Error decoding image: " + e.getMessage());
+            }
+        }
+
         Usuario updatedUsuario = usuarioRepository.save(usuario);
+        return mapToResponse(updatedUsuario);
+    }
+
+    private UserProfileResponse mapToResponse(Usuario usuario) {
         UserProfileResponse userProfileResponse = new UserProfileResponse();
-        userProfileResponse.setId(updatedUsuario.getId());
-        userProfileResponse.setNombre(updatedUsuario.getNombre());
-        userProfileResponse.setApellido(updatedUsuario.getApellido());
-        userProfileResponse.setUsername(updatedUsuario.getUsername());
-        userProfileResponse.setEmail(updatedUsuario.getEmail());
-        userProfileResponse.setTelefono(updatedUsuario.getTelefono());
-        userProfileResponse.setRoles(updatedUsuario.getRoles().stream()
+        userProfileResponse.setId(usuario.getId());
+        userProfileResponse.setNombre(usuario.getNombre());
+        userProfileResponse.setApellido(usuario.getApellido());
+        userProfileResponse.setUsername(usuario.getUsername());
+        userProfileResponse.setEmail(usuario.getEmail());
+        userProfileResponse.setTelefono(usuario.getTelefono());
+        userProfileResponse.setRoles(usuario.getRoles().stream()
                 .map(rol -> rol.getNombre().name())
                 .collect(Collectors.toList()));
-        userProfileResponse.setEnabled(updatedUsuario.getEnabled());
+        userProfileResponse.setEnabled(usuario.getEnabled());
+
+        if (usuario.getImagenData() != null && usuario.getImagenData().length > 0) {
+            String base64 = "data:" + usuario.getTipoImagen() + ";base64," +
+                    java.util.Base64.getEncoder().encodeToString(usuario.getImagenData());
+            userProfileResponse.setImagenBase64(base64);
+            userProfileResponse.setTipoImagen(usuario.getTipoImagen());
+        }
+
         return userProfileResponse;
     }
 

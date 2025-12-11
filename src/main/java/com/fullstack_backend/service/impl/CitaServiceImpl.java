@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalTime;
 
 @Service
 public class CitaServiceImpl implements CitaService {
@@ -47,12 +48,31 @@ public class CitaServiceImpl implements CitaService {
         Usuario tecnico = usuarioRepository.findById(citaRequest.getTecnicoId())
                 .orElseThrow(() -> new RuntimeException("Técnico no encontrado"));
 
-        // Check if technician already has appointment at this time
-        boolean tecnicoOcupado = citaRepository.existsByTecnicoAndFechaAndHoraAndEstadoNot(
-                tecnico, citaRequest.getFecha(), citaRequest.getHora(), EstadoCita.CANCELADA);
+        // Check if technician already has appointment at this time (overlapping)
+        // Assuming 1 hour duration for all services
+        List<Cita> citasDelDia = citaRepository.findByTecnicoAndFechaAndEstadoNot(
+                tecnico, citaRequest.getFecha(), EstadoCita.CANCELADA);
+
+        boolean tecnicoOcupado = false;
+        LocalTime newHora = citaRequest.getHora();
+        LocalTime newFin = newHora.plusHours(1);
+
+        for (Cita existingCita : citasDelDia) {
+            LocalTime existingHora = existingCita.getHora();
+            LocalTime existingFin = existingHora.plusHours(1);
+
+            // Check overlap: start1 < end2 && start2 < end1
+            if (newHora.isBefore(existingFin) && newHora.isAfter(existingHora) ||
+                    existingHora.isBefore(newFin) && existingHora.isAfter(newHora) ||
+                    newHora.equals(existingHora)) {
+                tecnicoOcupado = true;
+                break;
+            }
+        }
 
         if (tecnicoOcupado) {
-            throw new RuntimeException("El técnico ya tiene una cita en este horario");
+            throw new RuntimeException(
+                    "El técnico ya tiene una cita en conflicto con este horario (se requiere 1 hora de disponibilidad)");
         }
 
         // Create appointment
@@ -76,7 +96,17 @@ public class CitaServiceImpl implements CitaService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        return citaRepository.findByUsuarioOrderByFechaDescHoraDesc(usuario).stream()
+        List<Cita> citas;
+        boolean isTecnico = usuario.getRoles().stream()
+                .anyMatch(r -> r.getNombre().name().equals("ROLE_TECNICO"));
+
+        if (isTecnico) {
+            citas = citaRepository.findByTecnicoOrderByFechaDescHoraDesc(usuario);
+        } else {
+            citas = citaRepository.findByUsuarioOrderByFechaDescHoraDesc(usuario);
+        }
+
+        return citas.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -86,8 +116,12 @@ public class CitaServiceImpl implements CitaService {
         Cita cita = citaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
 
-        // Verify user owns this appointment
-        if (!cita.getUsuario().getUsername().equals(username)) {
+        // Verify user owns this appointment or is the assigned technician
+        boolean isOwner = cita.getUsuario().getUsername().equals(username);
+        boolean isAssignedTecnico = cita.getTecnico().getUsername().equals(username);
+
+        if (!isOwner && !isAssignedTecnico) {
+            // Check if admin? For now strict
             throw new RuntimeException("No tienes permiso para ver esta cita");
         }
 
@@ -112,6 +146,35 @@ public class CitaServiceImpl implements CitaService {
         cita.setEstado(EstadoCita.CANCELADA);
         Cita updatedCita = citaRepository.save(cita);
 
+        return mapToResponse(updatedCita);
+    }
+
+    @Override
+    @Transactional
+    public CitaResponse updateEstadoCita(Long id, String nuevoEstado, String username) {
+        Cita cita = citaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Only assigned technician or admin can update status
+        boolean isAssignedTecnico = cita.getTecnico().getUsername().equals(username);
+        boolean isAdmin = usuario.getRoles().stream().anyMatch(r -> r.getNombre().name().equals("ROLE_ADMIN"));
+
+        if (!isAssignedTecnico && !isAdmin) {
+            throw new RuntimeException("No tienes permiso para actualizar esta cita");
+        }
+
+        EstadoCita estadoEnum;
+        try {
+            estadoEnum = EstadoCita.valueOf(nuevoEstado.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Estado inválido: " + nuevoEstado);
+        }
+
+        cita.setEstado(estadoEnum);
+        Cita updatedCita = citaRepository.save(cita);
         return mapToResponse(updatedCita);
     }
 

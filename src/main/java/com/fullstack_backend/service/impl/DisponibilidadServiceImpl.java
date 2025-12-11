@@ -42,6 +42,10 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
             for (int hour = 8; hour < 18; hour++) {
                 LocalTime hora = LocalTime.of(hour, 0);
 
+                if (fecha.isEqual(LocalDate.now()) && hora.isBefore(LocalTime.now())) {
+                    continue;
+                }
+
                 // Check if technician has an appointment at this time
                 boolean ocupado = citaRepository.existsByTecnicoAndFechaAndHoraAndEstadoNot(
                         tecnico, fecha, hora, EstadoCita.CANCELADA);

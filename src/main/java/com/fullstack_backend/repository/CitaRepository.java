@@ -22,5 +22,9 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     boolean existsByTecnicoAndFechaAndHoraAndEstadoNot(Usuario tecnico, LocalDate fecha, LocalTime hora,
             EstadoCita estado);
 
+    List<Cita> findByTecnicoAndFechaAndEstadoNot(Usuario tecnico, LocalDate fecha, EstadoCita estado);
+
     List<Cita> findByEstado(EstadoCita estado);
+
+    List<Cita> findByTecnicoOrderByFechaDescHoraDesc(Usuario tecnico);
 }

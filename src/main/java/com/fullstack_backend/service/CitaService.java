@@ -15,5 +15,7 @@ public interface CitaService {
 
     CitaResponse cancelarCita(Long id, String username);
 
+    CitaResponse updateEstadoCita(Long id, String nuevoEstado, String username);
+
     List<CitaResponse> getAllCitas(); // Admin only
 }
