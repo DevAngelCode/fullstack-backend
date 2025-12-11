@@ -78,4 +78,21 @@ public class CitaController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @GetMapping("/{id}/recibo")
+    public ResponseEntity<byte[]> getReciboPdf(
+            @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            byte[] pdf = citaService.generarReciboPdf(id, username);
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"recibo_cita_" + id + ".pdf\"")
+                    .body(pdf);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+    }
 }

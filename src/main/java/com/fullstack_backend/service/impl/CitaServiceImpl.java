@@ -13,6 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalTime;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 @Service
 public class CitaServiceImpl implements CitaService {
@@ -173,6 +179,11 @@ public class CitaServiceImpl implements CitaService {
             throw new RuntimeException("Estado inválido: " + nuevoEstado);
         }
 
+        // Logic Check: Can only Complete if Confirmed
+        if (estadoEnum == EstadoCita.COMPLETADA && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new RuntimeException("No se puede completar una cita que no ha sido confirmada previamente.");
+        }
+
         cita.setEstado(estadoEnum);
         Cita updatedCita = citaRepository.save(cita);
         return mapToResponse(updatedCita);
@@ -183,6 +194,77 @@ public class CitaServiceImpl implements CitaService {
         return citaRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public byte[] generarReciboPdf(Long id, String username) {
+        Cita cita = citaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        boolean isOwner = cita.getUsuario().getUsername().equals(username);
+        boolean isAssignedTecnico = cita.getTecnico().getUsername().equals(username);
+        boolean isAdmin = usuario.getRoles().stream().anyMatch(r -> r.getNombre().name().equals("ROLE_ADMIN"));
+
+        if (!isOwner && !isAssignedTecnico && !isAdmin) {
+            throw new RuntimeException("No tienes permiso para ver este recibo");
+        }
+
+        try (PDDocument document = new PDDocument();
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            PDPage page = new PDPage();
+            document.addPage(page);
+
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+            // Title
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 18);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 750);
+            contentStream.showText("Comprobante de Cita");
+            contentStream.endText();
+
+            // Details
+            contentStream.setFont(PDType1Font.HELVETICA, 12);
+            contentStream.beginText();
+            contentStream.setLeading(14.5f);
+            contentStream.newLineAtOffset(50, 700);
+
+            contentStream.showText("ID Cita: " + cita.getId());
+            contentStream.newLine();
+            contentStream.showText("Cliente: " + cita.getUsuario().getNombre() + " " + cita.getUsuario().getApellido());
+            contentStream.newLine();
+            contentStream.showText("Servicio: " + cita.getServicio().getNombre());
+            contentStream.newLine();
+            contentStream.showText("Técnico: " + cita.getTecnico().getNombre() + " " + cita.getTecnico().getApellido());
+            contentStream.newLine();
+            contentStream.showText("Fecha: " + cita.getFecha());
+            contentStream.newLine();
+            contentStream.showText("Hora: " + cita.getHora());
+            contentStream.newLine();
+            contentStream.showText("Estado: " + cita.getEstado().name());
+            contentStream.newLine();
+            contentStream.showText("Sede: " + cita.getSede().getNombre());
+            contentStream.newLine();
+            contentStream.showText("Dirección: " + cita.getSede().getDireccion());
+            contentStream.newLine();
+            contentStream.newLine();
+
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 14);
+            contentStream.showText("Total: S/ " + cita.getServicio().getPrecio());
+
+            contentStream.endText();
+            contentStream.close();
+
+            document.save(out);
+            return out.toByteArray();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al generar el PDF del recibo", e);
+        }
     }
 
     private CitaResponse mapToResponse(Cita cita) {

@@ -18,4 +18,6 @@ public interface CitaService {
     CitaResponse updateEstadoCita(Long id, String nuevoEstado, String username);
 
     List<CitaResponse> getAllCitas(); // Admin only
+
+    byte[] generarReciboPdf(Long id, String username);
 }
